@@ -1,0 +1,18 @@
+{
+  "apps": [
+    {
+      "name": "test",
+      "allowed_from": "09:00",
+      "allowed_to": "18:00"
+    },
+    {
+      "name": "teste",
+      "allowed_from": "09:00",
+      "allowed_to": "18:00"
+    }
+  ],
+  "shutdown": "15:37",
+  "categories": {
+    
+  }
+}
