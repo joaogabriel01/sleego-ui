@@ -102,7 +102,8 @@ func (a *App) Run() error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	a.cancel = cancel
-	a.running = true
+
+	a.setRunning(true)
 
 	go a.processPolicy.Apply(ctx, cfg.Apps)
 
@@ -116,7 +117,7 @@ func (a *App) Run() error {
 	if cfg.Shutdown != "" {
 		st, err := time.Parse("15:04", cfg.Shutdown)
 		if err != nil {
-			a.running = false
+			a.setRunning(false)
 			cancel()
 			return err
 		}
@@ -130,11 +131,23 @@ func (a *App) Stop() error {
 	if !a.running {
 		return nil
 	}
-	a.running = false
 	if a.cancel != nil {
 		a.cancel()
 	}
+	a.setRunning(false)
 	return nil
+}
+
+func (a *App) IsRunning() bool {
+	return a.running
+}
+
+func (a *App) setRunning(v bool) {
+	a.running = v
+
+	runtime.EventsEmit(a.ctx, "sleego:state", map[string]any{
+		"running": v,
+	})
 }
 
 func defaultConfigPath() string {

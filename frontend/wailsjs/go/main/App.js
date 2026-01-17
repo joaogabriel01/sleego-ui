@@ -10,6 +10,10 @@ export function GetRunningProcesses() {
   return window['go']['main']['App']['GetRunningProcesses']();
 }
 
+export function IsRunning() {
+  return window['go']['main']['App']['IsRunning']();
+}
+
 export function Run() {
   return window['go']['main']['App']['Run']();
 }

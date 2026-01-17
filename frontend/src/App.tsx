@@ -4,6 +4,8 @@ import type { AppConfig, FileConfig, ProcessInfo } from "./api/types";
 import { ToastStack, Toast } from "./components/ToastStack";
 import { EventsOn } from "../wailsjs/runtime/runtime";
 
+import { IsRunning } from "../wailsjs/go/main/App";
+
 const ico = new URL("./assets/images/sleego.ico", import.meta.url).toString();
 
 import { RuleDrawer } from "./components/RuleDrawer";
@@ -75,6 +77,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("rules");
   const [procQuery, setProcQuery] = useState("");
   const [procOnlyUnconfigured, setProcOnlyUnconfigured] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
   const [ruleDrawerOpen, setRuleDrawerOpen] = useState(false);
   const [ruleDrawerMode, setRuleDrawerMode] = useState<"create" | "edit">(
     "create"
@@ -108,6 +111,16 @@ export default function App() {
   useEffect(() => {
     void loadAll();
   }, []);
+
+  useEffect(() => {
+  IsRunning().then(setIsRunning).catch(console.error);
+
+  const off = EventsOn("sleego:state", (payload: { running: boolean }) => {
+    setIsRunning(!!payload?.running);
+  });
+
+  return () => off();
+}, []);
 
   const dirty = useMemo(() => {
     if (!config || !initialConfig) return false;
@@ -144,6 +157,13 @@ export default function App() {
       setConfirmSaveRunOpen(true);
       return;
     }
+
+    if (isRunning) {
+      await api.stop();
+      console.log("Rules deactivated.");
+      return;
+    }
+
     setConfirmRunOpen(true);
   }
 
@@ -266,7 +286,7 @@ export default function App() {
         <div className="statusArea">
           <div className="statusPill">
             <span className="statusLabel">Status</span>
-            <span className="statusValue">Inactive</span>
+            <span className="statusValue">{isRunning ? "Active" : "Inactive"}</span>
           </div>
           {dirty && <div className="dirtyHint">Unsaved changes</div>}
           <button className="ghostBtn" onClick={() => void loadAll()}>
@@ -377,8 +397,8 @@ export default function App() {
             Save
           </button>
           <button className="btnPrimary" onClick={() => void onRunClick()}>
-            Activate rules
-          </button>
+          {isRunning ? "Stop" : "Activate Rules"}
+        </button>
         </div>
       </footer>
 
