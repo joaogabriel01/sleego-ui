@@ -9,6 +9,8 @@ export type SleegoApi = {
   getRunningProcesses(): Promise<ProcessInfo[]>;
 
   run(): Promise<void>;
+
+  stop(): Promise<void>;
 };
 
 const useMock = import.meta.env.VITE_USE_MOCK === "1";

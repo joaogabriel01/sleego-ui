@@ -39,4 +39,8 @@ export const mockApi: SleegoApi = {
   async run() {
     await new Promise((r) => setTimeout(r, 250));
   },
+
+  async stop() {
+    await new Promise((r) => setTimeout(r, 250));
+  },
 };

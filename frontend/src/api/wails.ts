@@ -1,6 +1,8 @@
 import * as models from "../../wailsjs/go/models";
-import { GetConfig, SaveConfig, GetRunningProcesses, Run } from "../../wailsjs/go/main/App";
+import { GetConfig, SaveConfig, GetRunningProcesses, Run, Stop } from "../../wailsjs/go/main/App";
 import type { FileConfig, ProcessInfo } from "./types";
+import { EventsOn } from "../../wailsjs/runtime/runtime";
+
 
 function fromWailsConfig(cfg: models.sleego.FileConfig): FileConfig {
   return {
@@ -44,4 +46,8 @@ export const wailsApi = {
   run(): Promise<void> {
     return Run();
   },
+
+  stop(): Promise<void> {
+    return Stop();
+  }
 };

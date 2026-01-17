@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import type { AppConfig, FileConfig, ProcessInfo } from "./api/types";
+import { ToastStack, Toast } from "./components/ToastStack";
+import { EventsOn } from "../wailsjs/runtime/runtime";
 
 const ico = new URL("./assets/images/sleego.ico", import.meta.url).toString();
 
@@ -12,13 +14,11 @@ import { isConfigured } from "./components/shared";
 import { ProcessesPanel } from "./components/ProcessesPanel";
 import { CreateBindingDrawer } from "./components/CreateBindingDrawer";
 
-
 type Tab = "rules" | "bindings";
 
 function deepEqual(a: unknown, b: unknown) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
-
 
 function ConfirmModal({
   open,
@@ -88,6 +88,8 @@ export default function App() {
 
   const [createBindingOpen, setCreateBindingOpen] = useState(false);
 
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
   async function loadAll() {
     setLoading(true);
     try {
@@ -146,6 +148,7 @@ export default function App() {
   }
 
   async function runConfirmed() {
+    await api.stop();
     setConfirmRunOpen(false);
     await api.run();
     console.log("Rules activated.");
@@ -196,7 +199,7 @@ export default function App() {
       const categories = { ...(prev.categories || {}) };
       if (opts.useAsCategory) {
         if (!categories[rule.name]) categories[rule.name] = [];
-      } 
+      }
 
       return { ...prev, apps, categories };
     });
@@ -213,6 +216,33 @@ export default function App() {
     if (!config) return;
     setTab("bindings");
   }
+
+  function pushToast(title: string, message?: string) {
+    const id = crypto.randomUUID();
+    setToasts((prev) => [...prev, { id, title, message }].slice(-3)); // keep only 3
+  }
+
+  function dismissToast(id: string) {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  useEffect(() => {
+    const off = EventsOn("sleego:alert", (msg: string) => {
+      if (msg.toLowerCase().includes("shutting down")) {
+        pushToast("Time to slow down", msg);
+        return;
+      }
+      if (msg.toLowerCase().includes("killing process")) {
+        pushToast("This application isn't available right now", msg);
+        return;
+      }
+      pushToast("Warning", msg);
+    });
+
+    return () => {
+      off();
+    };
+  }, []);
 
   if (loading || !config) {
     return (
@@ -262,27 +292,30 @@ export default function App() {
             </button>
           </div>
 
-        {tab === "rules" ? (
-        <RulesPanel
-          config={config}
-          onCreate={() => openCreateRuleDrawer()}
-          onEdit={(r) => openEditRuleDrawer(r)}
-          onRemove={(name) => {
-            setConfig((prev) => {
-              if (!prev) return prev;
-              return { ...prev, apps: prev.apps.filter((a) => a.name !== name) };
-            });
-          }}
-        />
-        ) : (
-        <BindingsPanel
-          config={config}
-          processes={processes}
-          onConfigChange={setConfig}
-          onOpenCreateBinding={() => setCreateBindingOpen(true)}
-          onCreateRuleForCategory={(catName) => openCreateRuleDrawer(catName)}
-        />
-        )}
+          {tab === "rules" ? (
+            <RulesPanel
+              config={config}
+              onCreate={() => openCreateRuleDrawer()}
+              onEdit={(r) => openEditRuleDrawer(r)}
+              onRemove={(name) => {
+                setConfig((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...prev,
+                    apps: prev.apps.filter((a) => a.name !== name),
+                  };
+                });
+              }}
+            />
+          ) : (
+            <BindingsPanel
+              config={config}
+              processes={processes}
+              onConfigChange={setConfig}
+              onOpenCreateBinding={() => setCreateBindingOpen(true)}
+              onCreateRuleForCategory={(catName) => openCreateRuleDrawer(catName)}
+            />
+          )}
         </section>
         <aside className="rightPanel">
           <div className="panelHeader">
@@ -323,7 +356,6 @@ export default function App() {
             onGoToBindings={() => setTab("bindings")}
             onGoToRules={() => setTab("rules")}
           />
-
         </aside>
       </main>
 
@@ -357,7 +389,9 @@ export default function App() {
         config={config}
         runningProcessNames={runningProcessNames}
         onClose={() => setRuleDrawerOpen(false)}
-        onSave={(rule, opts) => applyRuleSave(rule, { useAsCategory: opts.useAsCategory })}
+        onSave={(rule, opts) =>
+          applyRuleSave(rule, { useAsCategory: opts.useAsCategory })
+        }
       />
 
       <ShutdownDrawer
@@ -368,20 +402,20 @@ export default function App() {
       />
 
       <CreateBindingDrawer
-      open={createBindingOpen}
-      config={config}
-      onClose={() => setCreateBindingOpen(false)}
-      onCreate={(name) => {
-        setConfig((prev) => {
-          if (!prev) return prev;
-          const categories = { ...(prev.categories || {}) };
-          categories[name] = categories[name] || [];
-          return { ...prev, categories };
-        });
-        setCreateBindingOpen(false);
-        setTab("bindings");
-      }}
-    />
+        open={createBindingOpen}
+        config={config}
+        onClose={() => setCreateBindingOpen(false)}
+        onCreate={(name) => {
+          setConfig((prev) => {
+            if (!prev) return prev;
+            const categories = { ...(prev.categories || {}) };
+            categories[name] = categories[name] || [];
+            return { ...prev, categories };
+          });
+          setCreateBindingOpen(false);
+          setTab("bindings");
+        }}
+      />
 
       <ConfirmModal
         open={confirmRunOpen}
@@ -404,10 +438,8 @@ export default function App() {
         onSecondary={() => void runWithoutSavingConfirmed()}
         onTertiary={() => setConfirmSaveRunOpen(false)}
       />
+
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
-
-
-
-

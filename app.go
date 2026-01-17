@@ -8,8 +8,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/gen2brain/beeep"
 	"github.com/joaogabriel01/sleego"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+var iconPath = "./assets/sleego.ico"
 
 type App struct {
 	ctx context.Context
@@ -26,17 +30,18 @@ type App struct {
 	running bool
 	cancel  context.CancelFunc
 
-	shutdownCh chan string
+	alerts chan string
 }
 
 func NewApp() *App {
+	alerts := make(chan string, 50)
+
 	monitor := &sleego.ProcessorMonitorImpl{}
 	categoryOp := sleego.GetCategoryOperator()
 
-	processPolicy := sleego.NewProcessPolicyImpl(monitor, categoryOp, nil, nil)
+	processPolicy := sleego.NewProcessPolicyImpl(monitor, categoryOp, nil, alerts)
 
-	shutdownCh := make(chan string)
-	shutdownPolicy := sleego.NewShutdownPolicyImpl(shutdownCh, []int{})
+	shutdownPolicy := sleego.NewShutdownPolicyImpl(alerts, []int{1, 2, 3})
 
 	return &App{
 		configPath:     defaultConfigPath(),
@@ -45,7 +50,7 @@ func NewApp() *App {
 		categoryOp:     categoryOp,
 		processPolicy:  processPolicy,
 		shutdownPolicy: shutdownPolicy,
-		shutdownCh:     shutdownCh,
+		alerts:         alerts,
 	}
 }
 
@@ -100,6 +105,13 @@ func (a *App) Run() error {
 	a.running = true
 
 	go a.processPolicy.Apply(ctx, cfg.Apps)
+
+	go func() {
+		for msg := range a.alerts {
+			runtime.EventsEmit(a.ctx, "sleego:alert", msg)
+			_ = beeep.Notify("Sleego", msg, iconPath)
+		}
+	}()
 
 	if cfg.Shutdown != "" {
 		st, err := time.Parse("15:04", cfg.Shutdown)
