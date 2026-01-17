@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	run "runtime"
 	"time"
 
 	"github.com/gen2brain/beeep"
@@ -31,6 +32,8 @@ type App struct {
 	cancel  context.CancelFunc
 
 	alerts chan string
+
+	allowClose bool
 }
 
 func NewApp() *App {
@@ -150,15 +153,46 @@ func (a *App) setRunning(v bool) {
 	})
 }
 
+func (a *App) Hide() {
+	runtime.WindowHide(a.ctx)
+}
+
 func defaultConfigPath() string {
-	exe, err := os.Executable()
-	if err == nil {
+	// portable mode
+	if exe, err := os.Executable(); err == nil {
 		dir := filepath.Dir(exe)
 		p := filepath.Join(dir, "config.json")
 		if fileExists(p) {
 			return p
 		}
 	}
+
+	home, _ := os.UserHomeDir()
+
+	switch run.GOOS {
+	case "linux":
+		xdg := os.Getenv("XDG_CONFIG_HOME")
+		if xdg == "" && home != "" {
+			xdg = filepath.Join(home, ".config")
+		}
+		if xdg != "" {
+			return filepath.Join(xdg, "sleego", "config.json")
+		}
+
+	case "windows":
+		if appdata := os.Getenv("APPDATA"); appdata != "" {
+			return filepath.Join(appdata, "Sleego", "config.json")
+		}
+		if home != "" {
+			return filepath.Join(home, "AppData", "Roaming", "Sleego", "config.json")
+		}
+
+	case "darwin":
+		if home != "" {
+			return filepath.Join(home, "Library", "Application Support", "Sleego", "config.json")
+		}
+	}
+
 	return "./config.json"
 }
 

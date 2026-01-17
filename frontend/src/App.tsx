@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { api } from "./api";
 import type { AppConfig, FileConfig, ProcessInfo } from "./api/types";
-import { ToastStack, Toast } from "./components/ToastStack";
 import { EventsOn } from "../wailsjs/runtime/runtime";
 
-import { IsRunning } from "../wailsjs/go/main/App";
+import { IsRunning, Hide } from "../wailsjs/go/main/App";
 
 const ico = new URL("./assets/images/sleego.ico", import.meta.url).toString();
 
+import { ToastStack, Toast } from "./components/ToastStack";
 import { RuleDrawer } from "./components/RuleDrawer";
 import { ShutdownDrawer } from "./components/ShutdownDrawer";
 import { BindingsPanel } from "./components/BindingsPanel";
@@ -380,6 +380,14 @@ export default function App() {
       </main>
 
       <footer className="footerBar">
+      <div className="footerLeft">
+          <button
+            className="btnGhost"
+            onClick={() => Hide()}
+          >
+            Hide
+          </button>
+        </div>
         <div className="shutdownArea">
           <div className="label">Shutdown</div>
           <div className="value">{config.shutdown || "Disabled"}</div>

@@ -6,6 +6,8 @@ export function GetConfig():Promise<sleego.FileConfig>;
 
 export function GetRunningProcesses():Promise<Array<sleego.ProcessInfo>>;
 
+export function Hide():Promise<void>;
+
 export function IsRunning():Promise<boolean>;
 
 export function Run():Promise<void>;
