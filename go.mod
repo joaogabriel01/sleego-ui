@@ -4,11 +4,9 @@ go 1.25.1
 
 require (
 	github.com/gen2brain/beeep v0.11.2
-	github.com/joaogabriel01/sleego v0.0.0-00010101000000-000000000000
+	github.com/joaogabriel01/sleego v0.5.0
 	github.com/wailsapp/wails/v2 v2.11.0
 )
-
-replace github.com/joaogabriel01/sleego => ../sleego
 
 require (
 	git.sr.ht/~jackmordaunt/go-toast v1.1.2 // indirect
