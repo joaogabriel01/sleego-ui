@@ -1,19 +1,162 @@
-# README
+# Sleego UI
 
-## About
+![Sleego](docs/images/sleego_doc.png)
 
-This is the official Wails React template.
+This repository contains the **desktop user interface** for Sleego.
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+Sleego itself is a small system that enforces self-defined time boundaries on computer usage.
+The **core engine** (rules, process control, shutdown logic) lives in a **separate repository** and can be used independently.
 
-## Live Development
+👉 Core repository:
+[https://github.com/joaogabriel01/sleego](https://github.com/joaogabriel01/sleego)
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+This project focuses only on the **desktop interface**.
 
-## Building
+---
 
-To build a redistributable, production mode package, use `wails build`.
+## What this UI is for
+
+The UI exists to make the Sleego core usable on a daily basis.
+
+It allows you to:
+
+* visualize the current rules
+* configure application schedules
+* manage categories
+* see warnings and alerts
+* understand what the system is doing
+
+It does **not** implement business logic or enforcement by itself.
+
+---
+
+## Interface
+
+Below are a few screenshots of the current interface.
+
+The UI is intentionally minimal and designed to be opened only occasionally — usually when adjusting rules.
+
+> Note: visuals may evolve, but the core behavior is meant to stay predictable.
+
+![Main screen](docs/images/interface.png)
+
+---
+
+## What Sleego does (via the core)
+
+The UI exposes the following core features:
+
+### System shutdown
+
+* A fixed shutdown time can be configured
+* The system receives advance warnings
+* Shutdown happens automatically at the configured time
+
+This represents a clear “end of day” boundary.
+
+---
+
+### Application scheduling
+
+Each application can have an allowed time window.
+
+Example:
+
+```
+browser → 09:00 to 18:00
+game   → 20:00 to 23:30
+```
+
+Outside the allowed window, the application is terminated by the core.
+
+This is based on **time intervals**, not accumulated usage.
+
+---
+
+### Categories
+
+Applications can be grouped into logical categories, such as:
+
+* Work
+* Study
+* Games
+
+A category behaves like an application rule and applies to all applications inside it.
+
+---
+
+### Alerts
+
+Alerts are informational and non-intrusive.
+
+They exist to communicate what will happen before it happens.
+
+---
+
+## Architecture
+
+This repository contains **only the UI layer**.
+
+* **Sleego Core** (separate repository)
+
+  * rule engine
+  * process monitoring
+  * shutdown logic
+  * configuration persistence
+
+* **Sleego UI** (this repository)
+
+  * desktop interface (Wails)
+  * configuration editing
+  * state visualization
+  * user-facing alerts
+
+The UI depends on the core, not the other way around.
+
+---
+
+## Installation
+
+### Build
+
+```bash
+make build
+```
+
+### Install
+
+```bash
+make install
+```
+
+### Uninstall
+
+```bash
+make uninstall
+```
+
+User configuration is preserved during uninstall.
+
+---
+
+## Configuration
+
+The UI uses the same configuration file managed by the core.
+
+On Linux:
+
+```
+~/.config/sleego/config.json
+```
+
+On Windows:
+```
+%APPDATA%\Sleego\config.json
+```
+
+The configuration file is expected to exist and is managed by the UI.”
+
+
+## License
+
+This project is licensed under the MIT License.
